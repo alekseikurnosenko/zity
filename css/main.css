@@ -82,6 +82,7 @@ canvas {
 
 .brand > a {
 	text-decoration: none;
+	user-select: none;
 }
 
 #banner_container {
