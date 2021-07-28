@@ -20,9 +20,11 @@ let canvas, bg, fg, cf, tools, tool, activeTool, isPlacing
 
 let tileWidth = 128;
 let tileHeight = 64;
-let ntiles = 100;
-let scale = 0.5;
+let ntiles = 20;
+let scale = 1;
 let map = generateMap();
+
+let borders;
 
 let isMouseDown = false;
 let offsetX = 0;
@@ -47,13 +49,20 @@ const init = () => {
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
 
+	borders = {
+		left: -canvas.width / 2 - tileWidth,
+		right: canvas.width / 2 + tileWidth,
+		top: 0 - tileHeight * 3,
+		bottom: canvas.height + tileHeight * 3
+	}
+
 	w = canvas.width;
 	h = canvas.height;
 	texWidth = 12
 	texHeight = 6
 	bg = canvas.getContext("2d")
 
-	bg.translate(w / 2, tileHeight * 2)
+	bg.translate(w / 2, tileHeight * 1)
 
 	loadHashState(document.location.hash.substring(1))
 
@@ -64,33 +73,38 @@ const init = () => {
 	fg.height = canvas.height
 	cf = fg.getContext('2d')
 	cf.translate(w / 2, tileHeight * 2)
-	fg.addEventListener('mousemove', viz)
 	fg.addEventListener('contextmenu', e => e.preventDefault())
+
 	fg.addEventListener('mouseup', unclick)
+
+	fg.addEventListener('touchstart', click)
 	fg.addEventListener('mousedown', click)
-	// fg.addEventListener('touchend', click)
+
+	fg.addEventListener('mousemove', viz)
+	fg.addEventListener('touchmove', viz);
+
 	// fg.addEventListener('pointerup', click)
 
-	tools = $('#tools')
+	// tools = $('#tools')
 
-	let toolCount = 0
-	for (let i = 0; i < texHeight; i++) {
-		for (let j = 0; j < texWidth; j++) {
-			const div = $c('div');
-			div.id = `tool_${toolCount++}`
-			div.style.display = "block"
-			/* width of 132 instead of 130  = 130 image + 2 border = 132 */
-			div.style.backgroundPosition = `-${j * 130 + 2}px -${i * 230}px`
-			div.addEventListener('click', e => {
-				tool = [i, j]
-				if (activeTool)
-					$(`#${activeTool}`).classList.remove('selected')
-				activeTool = e.target.id
-				$(`#${activeTool}`).classList.add('selected')
-			})
-			tools.appendChild(div)
-		}
-	}
+	// let toolCount = 0
+	// for (let i = 0; i < texHeight; i++) {
+	// 	for (let j = 0; j < texWidth; j++) {
+	// 		const div = $c('div');
+	// 		div.id = `tool_${toolCount++}`
+	// 		div.style.display = "block"
+	// 		/* width of 132 instead of 130  = 130 image + 2 border = 132 */
+	// 		div.style.backgroundPosition = `-${j * 130 + 2}px -${i * 230}px`
+	// 		div.addEventListener('click', e => {
+	// 			tool = [i, j]
+	// 			if (activeTool)
+	// 				$(`#${activeTool}`).classList.remove('selected')
+	// 			activeTool = e.target.id
+	// 			$(`#${activeTool}`).classList.add('selected')
+	// 		})
+	// 		tools.appendChild(div)
+	// 	}
+	// }
 
 }
 
@@ -130,8 +144,16 @@ const loadHashState = state => {
 
 const click = e => {
 	isMouseDown = true;
-	currentOffsetX = e.offsetX - offsetX;
-	currentOffsetY = e.offsetY - offsetY;
+
+	var touches = e.changedTouches;
+	if (touches) {
+		console.log(touches);
+		currentOffsetX = touches[0].pageX - offsetX;
+		currentOffsetY = touches[0].pageY - offsetY;
+	} else {
+		currentOffsetX = e.offsetX - offsetX;
+		currentOffsetY = e.offsetY - offsetY;
+	}
 	// const pos = getPosition(e)
 	// if (pos.x >= 0 && pos.x < ntiles && pos.y >= 0 && pos.y < ntiles) {
 
@@ -180,14 +202,14 @@ const drawTile = (c, x, y, color) => {
 	c.restore()
 }
 
-const drawImageTile = (c, x, y, i, j) => {	
+const drawImageTile = (c, x, y, i, j) => {
 	let tx = ((y - x) * tileWidth / 2) * scale + offsetX;
 	let ty = ((x + y) * tileHeight / 2) * scale + offsetY;
-	
-	if (tx < (-canvas.width / 2 - tileWidth) || 
-		ty < (-canvas.height / 2 - tileHeight) || 
-		tx > (canvas.width / 2 + tileWidth) || 
-		ty > (canvas.heigth / 2 + tileHeight)
+
+	if (tx < borders.left ||
+		tx > borders.right ||
+		ty < borders.top ||
+		ty > borders.bottom
 	) {
 		return;
 	}
@@ -208,9 +230,30 @@ const getPosition = e => {
 }
 
 const viz = (e) => {
+	e.preventDefault();
+
 	if (isMouseDown) {
-		offsetX = e.offsetX - currentOffsetX;
-		offsetY = e.offsetY - currentOffsetY;
+		let touches = e.changedTouches;
+		if (touches) {
+			offsetX = touches[0].pageX - currentOffsetX;
+			offsetY = touches[0].pageY - currentOffsetY;
+		} else {
+			offsetX = e.offsetX - currentOffsetX;
+			offsetY = e.offsetY - currentOffsetY;
+		}
+
+		// Enforce scroll bounds		
+		if (ntiles * tileWidth / 2 - canvas.width / 2 + tileWidth  < offsetX) {
+			offsetX = ntiles * tileWidth / 2 - canvas.width / 2 + tileWidth;
+		} 
+		if (ntiles * tileWidth / 2 - canvas.width / 2 + tileWidth < -offsetX) {
+			offsetX = -(ntiles * tileWidth / 2 - canvas.width / 2 + tileWidth);
+		}
+
+		if (offsetY > 0) offsetY = 0;		
+		if (ntiles * tileHeight - canvas.height + tileHeight * 2 < -offsetY) {
+			offsetY = -(ntiles * tileHeight - canvas.height + tileHeight * 2);
+		}
 		drawMap()
 	}
 
