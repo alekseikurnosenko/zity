@@ -35,17 +35,26 @@ let currentOffsetY = 0;
 
 let div;
 
+const brands = [
+	{
+		name: "Zign",
+		position: { x: 100, y: 100 },
+		link: "https://en.zalando.de/all/zign/",
+	},
+	{
+		name: "ARMEDANGELS",
+		position: { x: 300, y: 300 },
+		link: "https://en.zalando.de/explore/armedangels/",
+	}
+]
+
 /* texture from https://opengameart.org/content/isometric-landscape */
 const texture = new Image()
 texture.src = "textures/01_130x66_130x230.png"
 texture.onload = _ => init()
 
 const init = () => {
-
 	tool = [0, 0]
-
-
-
 	canvas = $("#bg")
 
 	canvas.width = window.innerWidth;
@@ -85,26 +94,12 @@ const init = () => {
 	fg.addEventListener('mousemove', onMove)
 	fg.addEventListener('touchmove', onMove);
 
-	div = $c('div');
-	div.id = 'some';
-	div.classList.add('brand')
-	div.style.top = '100px'
-	div.style.left = '100px'
-	/* width of 132 instead of 130  = 130 image + 2 border = 132 */
-	let a = $c('a');
-	a.href = "https://www.zalando.de/entdecken/armedangels-damen/?sc=false&_q=armedangels";
-	a.innerHTML = "ARMEDANGELS";
-	div.appendChild(a);
-	// div.addEventListener('click', e => {
-	// 	tool = [i, j]
-	// 	if (activeTool)
-	// 		$(`#${activeTool}`).classList.remove('selected')
-	// 	activeTool = e.target.id
-	// 	$(`#${activeTool}`).classList.add('selected')
-	// })
-	console.log(div);
-	div.style.zIndex = 999;
-	$('#area').appendChild(div)
+	for (let i = 0; i < brands.length; i++) {
+		let banner = buildBrandBanner(brands[i]);
+		$('#banner_container').appendChild(banner)
+	}
+	
+	
 
 	// fg.addEventListener('pointerup', click)
 	// tools = $('#tools')
@@ -162,6 +157,21 @@ const loadHashState = state => {
 	// 	}
 	// }
 }
+
+const buildBrandBanner = brand => {
+	let div = $c('div');	
+	div.classList.add('brand')
+	div.style.top = `${brand.position.y}px`
+	div.style.left = `${brand.position.x}px`
+	
+	let a = $c('a');
+	a.href = brand.link;
+	a.innerHTML = brand.name;
+	
+	div.appendChild(a);
+
+	return div;
+};
 
 const click = e => {
 	isMouseDown = true;
@@ -264,21 +274,21 @@ const onMove = (e) => {
 		}
 
 		// Enforce scroll bounds		
-		if (scale * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2  < offsetX) {
+		if (scale * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2 < offsetX) {
 			offsetX = scale * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2;
-		} 
+		}
 		if (scale * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2 < -offsetX) {
 			offsetX = -1 * scale * (ntiles * tileWidth / 2 + tileWidth) + canvas.width / 2;
 		}
 
-		if (offsetY > tileHeight) offsetY = tileHeight;		
+		if (offsetY > tileHeight) offsetY = tileHeight;
 		if (scale * (ntiles * tileHeight + tileHeight * 2) - canvas.height < -offsetY) {
 			offsetY = -1 * scale * (ntiles * tileHeight + tileHeight * 2) + canvas.height;
 		}
 		drawMap()
 
-		div.style.top = `${100 + offsetY}px`
-		div.style.left = `${100 + offsetX}px`
+		$('#banner_container').style.top = `${offsetY}px`
+		$('#banner_container').style.left = `${offsetX}px`
 	}
 
 	// if (isPlacing)

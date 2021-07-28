@@ -84,6 +84,12 @@ canvas {
 	text-decoration: none;
 }
 
+#banner_container {
+	width: '100%';
+	height: '100%';
+	position: absolute;
+}
+
 @media only screen and (max-width: 966px) {
 
 	#main {
