@@ -20,8 +20,8 @@ let canvas, bg, fg, cf, tools, tool, activeTool, isPlacing
 
 let tileWidth = 128;
 let tileHeight = 64;
-let ntiles = 20;
-let scale = 1;
+let ntiles = 30;
+let scale = 0.5;
 let map = generateMap();
 
 let borders;
@@ -83,10 +83,21 @@ const init = () => {
 	fg.addEventListener('mousemove', viz)
 	fg.addEventListener('touchmove', viz);
 
+	// const div = $c('div');
+	// div.style.display = "block"
+	// /* width of 132 instead of 130  = 130 image + 2 border = 132 */
+	// div.innerHtml = "BRAND HERE"
+	// // div.addEventListener('click', e => {
+	// // 	tool = [i, j]
+	// // 	if (activeTool)
+	// // 		$(`#${activeTool}`).classList.remove('selected')
+	// // 	activeTool = e.target.id
+	// // 	$(`#${activeTool}`).classList.add('selected')
+	// // })
+	// fg.appendChild(div)
+
 	// fg.addEventListener('pointerup', click)
-
 	// tools = $('#tools')
-
 	// let toolCount = 0
 	// for (let i = 0; i < texHeight; i++) {
 	// 	for (let j = 0; j < texWidth; j++) {
@@ -243,16 +254,16 @@ const viz = (e) => {
 		}
 
 		// Enforce scroll bounds		
-		if (ntiles * tileWidth / 2 - canvas.width / 2 + tileWidth  < offsetX) {
-			offsetX = ntiles * tileWidth / 2 - canvas.width / 2 + tileWidth;
+		if (scale * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2  < offsetX) {
+			offsetX = scale * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2;
 		} 
-		if (ntiles * tileWidth / 2 - canvas.width / 2 + tileWidth < -offsetX) {
-			offsetX = -(ntiles * tileWidth / 2 - canvas.width / 2 + tileWidth);
+		if (scale * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2 < -offsetX) {
+			offsetX = -1 * scale * (ntiles * tileWidth / 2 + tileWidth) + canvas.width / 2;
 		}
 
-		if (offsetY > 0) offsetY = 0;		
-		if (ntiles * tileHeight - canvas.height + tileHeight * 2 < -offsetY) {
-			offsetY = -(ntiles * tileHeight - canvas.height + tileHeight * 2);
+		if (offsetY > tileHeight) offsetY = tileHeight;		
+		if (scale * (ntiles * tileHeight + tileHeight * 2) - canvas.height < -offsetY) {
+			offsetY = -1 * scale * (ntiles * tileHeight + tileHeight * 2) + canvas.height;
 		}
 		drawMap()
 	}
