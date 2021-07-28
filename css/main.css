@@ -70,6 +70,20 @@ canvas {
 	border-color: #b05355;
 }
 
+.brand {
+	background-color: white;
+    padding: 16px;
+    border: 1px solid black;
+    border-radius: 8px;
+	z-index: 999;
+	display: block;
+	position: absolute;
+}
+
+.brand > a {
+	text-decoration: none;
+}
+
 @media only screen and (max-width: 966px) {
 
 	#main {

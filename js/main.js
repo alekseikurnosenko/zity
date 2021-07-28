@@ -33,6 +33,8 @@ let offsetY = 0;
 let currentOffsetX = 0;
 let currentOffsetY = 0;
 
+let div;
+
 /* texture from https://opengameart.org/content/isometric-landscape */
 const texture = new Image()
 texture.src = "textures/01_130x66_130x230.png"
@@ -80,21 +82,29 @@ const init = () => {
 	fg.addEventListener('touchstart', click)
 	fg.addEventListener('mousedown', click)
 
-	fg.addEventListener('mousemove', viz)
-	fg.addEventListener('touchmove', viz);
+	fg.addEventListener('mousemove', onMove)
+	fg.addEventListener('touchmove', onMove);
 
-	// const div = $c('div');
-	// div.style.display = "block"
-	// /* width of 132 instead of 130  = 130 image + 2 border = 132 */
-	// div.innerHtml = "BRAND HERE"
-	// // div.addEventListener('click', e => {
-	// // 	tool = [i, j]
-	// // 	if (activeTool)
-	// // 		$(`#${activeTool}`).classList.remove('selected')
-	// // 	activeTool = e.target.id
-	// // 	$(`#${activeTool}`).classList.add('selected')
-	// // })
-	// fg.appendChild(div)
+	div = $c('div');
+	div.id = 'some';
+	div.classList.add('brand')
+	div.style.top = '100px'
+	div.style.left = '100px'
+	/* width of 132 instead of 130  = 130 image + 2 border = 132 */
+	let a = $c('a');
+	a.href = "https://www.zalando.de/entdecken/armedangels-damen/?sc=false&_q=armedangels";
+	a.innerHTML = "ARMEDANGELS";
+	div.appendChild(a);
+	// div.addEventListener('click', e => {
+	// 	tool = [i, j]
+	// 	if (activeTool)
+	// 		$(`#${activeTool}`).classList.remove('selected')
+	// 	activeTool = e.target.id
+	// 	$(`#${activeTool}`).classList.add('selected')
+	// })
+	console.log(div);
+	div.style.zIndex = 999;
+	$('#area').appendChild(div)
 
 	// fg.addEventListener('pointerup', click)
 	// tools = $('#tools')
@@ -240,7 +250,7 @@ const getPosition = e => {
 	return { x, y }
 }
 
-const viz = (e) => {
+const onMove = (e) => {
 	e.preventDefault();
 
 	if (isMouseDown) {
@@ -266,6 +276,9 @@ const viz = (e) => {
 			offsetY = -1 * scale * (ntiles * tileHeight + tileHeight * 2) + canvas.height;
 		}
 		drawMap()
+
+		div.style.top = `${100 + offsetY}px`
+		div.style.left = `${100 + offsetX}px`
 	}
 
 	// if (isPlacing)
