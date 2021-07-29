@@ -38,23 +38,23 @@ let lastPositionX = 0;
 let lastPositionY = 0;
 
 let div;
-
-let isPinching = false;
 let startTouchDifference = 0;
 let startZoomPoint;
 
-const brands = [
+let brands = [
 	{
 		name: "Zign",
-		position: { x: 100, y: 100 },
+		position: { x: -100, y: 900 },
 		link: "https://en.zalando.de/all/zign/",
+		banner: undefined,
 	},
 	{
 		name: "ARMEDANGELS",
 		position: { x: 300, y: 300 },
 		link: "https://en.zalando.de/explore/armedangels/",
+		banner: undefined,
 	}
-]
+];
 
 /* texture from https://opengameart.org/content/isometric-landscape */
 const texture = new Image()
@@ -81,7 +81,13 @@ const init = () => {
 	bg = canvas.getContext("2d")
 
 	offsetX = w;
-	offsetY = -h;
+	offsetY = 0;
+
+	for (let i = 0; i < brands.length; i++) {
+		let banner = buildBrandBanner(brands[i]);
+		brands[i].banner = banner; 
+		$('#banner_container').appendChild(banner)
+	}
 
 	drawMap()
 
@@ -94,18 +100,15 @@ const init = () => {
 
 	fg.addEventListener('contextmenu', e => e.preventDefault())
 
+	fg.addEventListener('touchend', unclick)
+	fg.addEventListener('touchcancel', unclick)
 	fg.addEventListener('mouseup', unclick)
 
 	fg.addEventListener('touchstart', click)
 	fg.addEventListener('mousedown', click)
 
 	fg.addEventListener('mousemove', onMove)
-	fg.addEventListener('touchmove', onMove);
-
-	for (let i = 0; i < brands.length; i++) {
-		let banner = buildBrandBanner(brands[i]);
-		$('#banner_container').appendChild(banner)
-	}
+	fg.addEventListener('touchmove', onMove);	
 }
 
 const buildBrandBanner = brand => {
@@ -142,6 +145,16 @@ const drawMap = () => {
 	}
 
 	// $('#log').innerHTML = drawCount	
+
+	// $('#banner_container').style.top = `${offsetY * scale}px`
+	// $('#banner_container').style.left = `${(offsetX - canvas.width / 2) * scale}px`
+
+	for (let i = 0; i < brands.length; i++) {
+		let brand = brands[i];
+
+		brand.banner.style.top = `${(brand.position.y + offsetY) * scale}px`
+		brand.banner.style.left = `${(brand.position.x + offsetX - canvas.width / 2) * scale}px`
+	}
 };
 
 const drawPoint = point => {
@@ -184,7 +197,7 @@ const drawImageTile = (c, x, y, i, j) => {
 	return true;
 }
 
-const click = e => {
+const click = e => {	
 	var touches = e.touches;
 
 	if (touches) {
@@ -198,7 +211,7 @@ const click = e => {
 	if (touches && touches.length > 1) {
 		// Second touch
 		// Start pinch
-		isPinching = true;
+
 		startTouchDifference = getTouchDistance(touches);
 		startZoomPoint = getZoomPoint(touches);
 
@@ -207,19 +220,19 @@ const click = e => {
 		lastPositionY = startZoomPoint.y;
 		return;
 	}
-	isMouseDown = true;	
+	isMouseDown = true;
 }
 
 const unclick = e => {
 	var touches = e.touches;
-	if (touches && isPinching && touches.length <= 1) {
-		// Stop pinch
-		isPinching = false;
-
-		// Set whatever remains as last position
-		// TODO: doesn't seem to work?
-		lastPositionX = touches[0].pageX;
-		lastPositionY = touches[0].pageY;
+	if (touches) {
+		if (touches.length > 0) {
+			$('#log').innerHTML = "unclick"
+			lastPositionX = touches[0].pageX;
+			lastPositionY = touches[0].pageY;
+			// Still have touch
+			return;			
+		}
 	}
 	isMouseDown = false;
 }
@@ -288,10 +301,8 @@ const onMove = (e) => {
 
 			drawPoint(zoomPoint);
 
-			// TODO: We can treat the mid-point here as touch point
-
 			offsetX += (zoomPoint.x - lastPositionX) / getScale();
-			offsetY += (zoomPoint.y- lastPositionY) / getScale();
+			offsetY += (zoomPoint.y - lastPositionY) / getScale();
 
 			lastPositionX = zoomPoint.x;
 			lastPositionY = zoomPoint.y;
@@ -327,9 +338,6 @@ const onMove = (e) => {
 		// if (getScale() * (ntiles * tileHeight + tileHeight * 2) - canvas.height < -offsetY) {
 		// 	offsetY = -1 * getScale() * (ntiles * tileHeight + tileHeight * 2) + canvas.height;
 		// }
-		drawMap()
-
-		$('#banner_container').style.top = `${offsetY}px`
-		$('#banner_container').style.left = `${offsetX}px`
+		drawMap()		
 	}
 }
