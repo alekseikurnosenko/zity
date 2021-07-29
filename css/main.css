@@ -3,6 +3,7 @@ html, body {
   padding: 0;
   height: 100vh;
   width: 100vw;
+  background-color: #0a4b78;
 }
 
 canvas {
@@ -13,25 +14,8 @@ canvas {
 #main {
 	position: relative;
 	display: flex;
-	align-items: center;
-	justify-content: space-around;
 	width: 100%;
-	height: 100%;
-}
-
-#tools > div {
-	display: block;
-	background-image: url('../textures/01_130x66_130x230.png');
-	background-repeat: no-repeat;
-	background-size: auto;
-	width: 130px;
-	height: 230px;
-	border: 2px dashed transparent;
-	box-sizing: border-box;
-}
-
-#tools > div.selected {
-	border-color: #b05355;
+	height: 100%;		
 }
 
 .brand {
@@ -55,7 +39,7 @@ canvas {
 	position: absolute;
 	top: 0;
 	left: 0;
-	overflow: hidden;	
+	overflow: hidden;		
 }
 
 #log {

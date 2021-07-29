@@ -242,7 +242,8 @@ const init = () => {
 	canvas = $("#bg")
 
 	canvas.width = window.innerWidth;
-	canvas.height = window.innerHeight;
+	var iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; 
+	canvas.height = (iOS) ? screen.height : window.innerHeight;
 
 	borders = {
 		left: 0 - tileWidth,
