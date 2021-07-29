@@ -105,7 +105,7 @@ let brands = [
 ];
 
 let users = [];
-let ownId = 0;
+let ownId;
 let houses = [];
 
 var firebaseConfig = {
@@ -135,9 +135,39 @@ const init = () => {
 	// Pre-place empty house to wait for loading to happen
 	placeHouse(ntiles / 2, ntiles / 2, 0, map);
 
+	const queryString = window.location.search;
+	const urlParams = new URLSearchParams(queryString);
+	const userName = urlParams.get('user');
+
 	firebase.database().ref('users').on('value', snapshot => {
 		users = snapshot.val();
 
+
+		users.forEach(user => {
+			if (user.name === userName) {
+				ownId = user.id;
+			};
+		})
+
+		if (ownId === undefined) {
+			// Register ourselves
+			// Get next id
+			let maxId = -1;
+			users.forEach(user => {
+				if (user.id > maxId) {
+					maxId = user.id;
+				}
+			})
+			firebase.database().ref('users/' + (maxId + 1)).set({
+				id: maxId + 1,
+				house_plot: {
+					trees: 0
+				},
+				name: userName,
+				friends: []
+			});
+			return;			
+		}
 		const ownUser = users[ownId];
 
 		houses = [
@@ -151,8 +181,10 @@ const init = () => {
 			}
 		];
 
-		let places = [[8, 0], [0, 8], [-8, 0], [0, -8], [8, 8], [-8, -8], [8, -8], [-8, 8]];		
-		ownUser.friends.forEach((friend, index) => {
+		let places = [[8, 0], [0, 8], [-8, 0], [0, -8], [8, 8], [-8, -8], [8, -8], [-8, 8]];
+		// NB: for newly created users friends might be undefined
+		// Because firebase cannot save empty arrays ;_;
+		(ownUser.friends || []).forEach((friend, index) => {
 			houses.push({
 				position: {
 					x: ntiles / 2 + places[index][0],
