@@ -1,6 +1,9 @@
 
 const $ = _ => document.querySelector(_)
 const $c = _ => document.createElement(_)
+const texture = new Image()
+const texture2 = new Image()
+
 let ntiles = 50;
 
 const generateMap = () => {
@@ -9,16 +12,57 @@ const generateMap = () => {
 		map[i] = [];
 		for (let j = 0; j < ntiles; j++) {
 			while (true) {
-				let tileX = Math.ceil(Math.random() * 11) - 1;			
+				let tileX = Math.ceil(Math.random() * 11) - 1;
 				let tileY = Math.ceil(Math.random() * 6) - 1;
 				if (tileY === 2) continue
-				map[i][j] = [tileY, tileX];				
+				map[i][j] = [tileY, tileX, texture];
 				break;
 			}
 		}
 	}
-	console.log(JSON.stringify(map))
 	return map;
+}
+
+const placeHouse = (x, y, treeCount, map) => {
+	let plotSize = 9;
+	// Base green
+	for (let i = -Math.floor(plotSize / 2); i < Math.ceil(plotSize / 2); i++) {
+		for (let j = -Math.floor(plotSize / 2); j < Math.ceil(plotSize / 2); j++) {
+			map[x + i][y + j] = [0, 5, texture2];
+		}
+	}
+
+	plotSize = 7;
+	// Base green
+	for (let i = -Math.floor(plotSize / 2); i < Math.ceil(plotSize / 2); i++) {
+		for (let j = -Math.floor(plotSize / 2); j < Math.ceil(plotSize / 2); j++) {
+			map[x + i][y + j] = [0, 1, texture2];
+		}
+	}
+
+	// Place trees
+	let treePositions = [];
+	for (let i = -Math.floor(plotSize / 2); i < Math.ceil(plotSize / 2); i++) {
+		for (let j = -Math.floor(plotSize / 2); j < Math.ceil(plotSize / 2); j++) {
+			if (i === 0 && j === 0) continue;
+
+			treePositions.push([i, j]);
+		}
+	}
+
+	// Randomise available tree position
+	// Ideally should be pseudo-random
+	treePositions = treePositions.sort(() => Math.random() > 0.5 ? 1 : -1);
+	for (let t = 0; t < treeCount; t++) {
+
+		const trees = [2, 3, 4].sort(() => Math.random() > 0.5 ? 1 : -1);
+		const [i, j] = treePositions[t];
+		map[x + i][y + j] = [0, trees[0], texture2];
+	}
+
+	// Place house
+	map[x][y] = [0, 0, texture2];
+
 }
 
 let canvas, bg, fg, cf, tools, tool, activeTool, isPlacing
@@ -28,6 +72,11 @@ let tileHeight = 64;
 
 let scale = 0.5;
 let map = generateMap();
+placeHouse(ntiles / 2, ntiles / 2, 40, map);
+
+placeHouse(ntiles / 2 + 8, ntiles / 2, 10, map);
+
+placeHouse(ntiles / 2, ntiles / 2 + 8, 20, map);
 
 let borders;
 
@@ -61,11 +110,17 @@ let brands = [
 ];
 
 /* texture from https://opengameart.org/content/isometric-landscape */
-const texture = new Image()
 texture.src = "textures/01_130x66_130x230.png"
 texture.onload = _ => init()
+texture2.src = "textures/2.png"
+texture2.onload = _ => init()
+
+let loadedCount = 0;
 
 const init = () => {
+	loadedCount++;
+	if (loadedCount < 2) return;
+
 	canvas = $("#bg")
 
 	canvas.width = window.innerWidth;
@@ -89,7 +144,7 @@ const init = () => {
 
 	for (let i = 0; i < brands.length; i++) {
 		let banner = buildBrandBanner(brands[i]);
-		brands[i].banner = banner; 
+		brands[i].banner = banner;
 		$('#banner_container').appendChild(banner)
 	}
 
@@ -112,7 +167,7 @@ const init = () => {
 	fg.addEventListener('mousedown', click)
 
 	fg.addEventListener('mousemove', onMove)
-	fg.addEventListener('touchmove', onMove);	
+	fg.addEventListener('touchmove', onMove);
 }
 
 const buildBrandBanner = brand => {
@@ -141,8 +196,9 @@ const drawMap = () => {
 		for (let j = 0; j < ntiles; j++) {
 			let tileX = map[i][j][0];
 			let tileY = map[i][j][1];
+			let atlas = map[i][j][2];
 
-			if (drawImageTile(bg, i, j, tileX, tileY)) {
+			if (drawImageTile(bg, i, j, tileX, tileY, atlas)) {
 				drawCount++;
 			}
 		}
@@ -169,7 +225,7 @@ const drawPoint = point => {
 	bg.stroke();
 }
 
-const drawImageTile = (c, x, y, i, j) => {
+const drawImageTile = (c, x, y, i, j, atlas) => {
 	let tx = ((y - x) * tileWidth / 2) + offsetX;
 	let ty = ((x + y) * tileHeight / 2) + offsetY;
 
@@ -186,7 +242,7 @@ const drawImageTile = (c, x, y, i, j) => {
 	// c.translate(tx, ty)
 	// j,i - indicies of the tile on the tilemap
 	c.drawImage(
-		texture, // atlass
+		atlas, // atlass
 		j * 130, // position on the tilemap
 		i * 230, // position on the tilemap
 		130,  // source width
@@ -201,7 +257,7 @@ const drawImageTile = (c, x, y, i, j) => {
 	return true;
 }
 
-const click = e => {	
+const click = e => {
 	var touches = e.touches;
 
 	if (touches) {
@@ -235,7 +291,7 @@ const unclick = e => {
 			lastPositionX = touches[0].pageX;
 			lastPositionY = touches[0].pageY;
 			// Still have touch
-			return;			
+			return;
 		}
 	}
 	isMouseDown = false;
@@ -342,6 +398,6 @@ const onMove = (e) => {
 		// if (getScale() * (ntiles * tileHeight + tileHeight * 2) - canvas.height < -offsetY) {
 		// 	offsetY = -1 * getScale() * (ntiles * tileHeight + tileHeight * 2) + canvas.height;
 		// }
-		drawMap()		
+		drawMap()
 	}
 }
