@@ -410,7 +410,7 @@ const unclick = e => {
 	var touches = e.touches;
 	if (touches) {
 		if (touches.length > 0) {
-			$('#log').innerHTML = "unclick"
+			// $('#log').innerHTML = "unclick"
 			lastPositionX = touches[0].pageX;
 			lastPositionY = touches[0].pageY;
 			// Still have touch
