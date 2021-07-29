@@ -6,14 +6,16 @@ const texture2 = new Image()
 
 let ntiles = 50;
 
-const generateMap = () => {
+const generateMap = (seed) => {
+	let rng = new RNG(seed);
+
 	const map = [];
 	for (let i = 0; i < ntiles; i++) {
 		map[i] = [];
 		for (let j = 0; j < ntiles; j++) {
 			while (true) {
-				let tileX = Math.ceil(Math.random() * 11) - 1;
-				let tileY = Math.ceil(Math.random() * 6) - 1;
+				let tileX = Math.ceil(rng.nextFloat() * 11) - 1;
+				let tileY = Math.ceil(rng.nextFloat() * 6) - 1;
 				if (tileY === 2) continue
 				map[i][j] = [tileY, tileX, texture];
 				break;
@@ -23,7 +25,7 @@ const generateMap = () => {
 	return map;
 }
 
-const placeHouse = (x, y, treeCount, map) => {
+const placeHouse = (x, y, treeCount, seed, map) => {
 	let plotSize = 9;
 	// Base green
 	for (let i = -Math.floor(plotSize / 2); i < Math.ceil(plotSize / 2); i++) {
@@ -50,9 +52,8 @@ const placeHouse = (x, y, treeCount, map) => {
 		}
 	}
 
-	// Randomise available tree position
-	
-	var rng = new RNG(20);
+	// Randomise available tree position	
+	var rng = new RNG(seed);
 
 	treePositions = treePositions.sort(() => rng.nextFloat() > 0.5 ? 1 : -1);
 	for (let t = 0; t < treeCount; t++) {
@@ -64,7 +65,6 @@ const placeHouse = (x, y, treeCount, map) => {
 
 	// Place house
 	map[x][y] = [0, 0, texture2];
-
 }
 
 let canvas, bg, fg, cf, tools, tool, activeTool, isPlacing
@@ -72,8 +72,12 @@ let canvas, bg, fg, cf, tools, tool, activeTool, isPlacing
 let tileWidth = 128;
 let tileHeight = 64;
 
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+const userName = urlParams.get('user') || "Zitizen";
+
 let scale = 0.5;
-let map = generateMap();
+let map = generateMap(hashCode(userName));
 
 let borders;
 
@@ -135,11 +139,8 @@ const init = () => {
 	if (loadedCount < 2) return;
 
 	// Pre-place empty house to wait for loading to happen
-	placeHouse(ntiles / 2, ntiles / 2, 0, map);
-
-	const queryString = window.location.search;
-	const urlParams = new URLSearchParams(queryString);
-	const userName = urlParams.get('user');
+	placeHouse(ntiles / 2, ntiles / 2, 0, 0, map);
+	
 
 	firebase.database().ref('users').on('value', snapshot => {
 		users = snapshot.val();
@@ -200,8 +201,8 @@ const init = () => {
 			})
 		})
 
-		houses.forEach(house => {
-			placeHouse(house.position.x, house.position.y, house.trees, map);
+		houses.forEach(house => {			
+			placeHouse(house.position.x, house.position.y, house.trees, hashCode(house.name), map);
 		});
 
 		drawMap();
