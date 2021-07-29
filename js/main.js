@@ -104,32 +104,21 @@ let brands = [
 	}
 ];
 
-const houses = [
-	{
-		name: "aleksei.kurnosenko",
-		position: {
-			x: ntiles / 2,
-			y: ntiles / 2
-		},
-		trees: 10
-	},
-	{
-		name: "sarah.akid",
-		position: {
-			x: ntiles / 2 + 8,
-			y: ntiles / 2
-		},
-		trees: 40
-	},
-	{
-		name: "arevik.tunyan",
-		position: {
-			x: ntiles / 2,
-			y: ntiles / 2 + 8
-		},
-		trees: 20
-	},
-]
+let users = [];
+let ownId = 0;
+let houses = [];
+
+var firebaseConfig = {
+	apiKey: "AIzaSyBYHT1GcB6DSeVL2d4HPmIVPXP7DAXgCOs",
+	authDomain: "zcity-70ee9.firebaseapp.com",
+	databaseURL: "https://zcity-70ee9-default-rtdb.firebaseio.com",
+	projectId: "zcity-70ee9",
+	storageBucket: "zcity-70ee9.appspot.com",
+	messagingSenderId: "463942414884",
+	appId: "1:463942414884:web:ff1438d113fbd5b859deb1"
+};
+
+firebase.initializeApp(firebaseConfig);
 
 /* texture from https://opengameart.org/content/isometric-landscape */
 texture.src = "textures/01_130x66_130x230.png"
@@ -143,9 +132,44 @@ const init = () => {
 	loadedCount++;
 	if (loadedCount < 2) return;
 
-	houses.forEach(house => {
-		placeHouse(house.position.x, house.position.y, house.trees, map);
-	});
+	// Pre-place empty house to wait for loading to happen
+	placeHouse(ntiles / 2, ntiles / 2, 0, map);
+
+	firebase.database().ref('users').on('value', snapshot => {
+		users = snapshot.val();
+
+		const ownUser = users[ownId];
+
+		houses = [
+			{
+				position: {
+					x: ntiles / 2,
+					y: ntiles / 2
+				},
+				trees: ownUser.house_plot.trees,
+				name: ownUser.name
+			}
+		];
+
+		let places = [[8, 0], [0, 8], [-8, 0], [0, -8], [8, 8], [-8, -8], [8, -8], [-8, 8]];		
+		ownUser.friends.forEach((friend, index) => {
+			houses.push({
+				position: {
+					x: ntiles / 2 + places[index][0],
+					y: ntiles / 2 + places[index][1],
+				},
+				trees: users[friend.id].house_plot.trees,
+				name: users[friend.id].name
+			})
+		})
+
+		houses.forEach(house => {
+			placeHouse(house.position.x, house.position.y, house.trees, map);
+		});
+
+		drawMap();
+	})
+
 
 	canvas = $("#bg")
 
@@ -239,14 +263,14 @@ const drawMap = () => {
 	houses.forEach(house => {
 		bg.font = '36px Helvetica';
 
-		let x = house.position.x; 
+		let x = house.position.x;
 		let y = house.position.y;
 		let tx = ((y - x) * tileWidth / 2) + offsetX;
 		let ty = ((x + y) * tileHeight / 2) + offsetY;
-	
+
 		const houseName = `${house.name}  ${house.trees}🌲`;
 		const nameWidth = bg.measureText(houseName).width
-		bg.fillText(houseName, tx - nameWidth / 2, ty - 50)	
+		bg.fillText(houseName, tx - nameWidth / 2, ty - 50)
 	});
 	bg.restore();
 
@@ -276,7 +300,7 @@ const drawImageTile = (c, x, y, i, j, atlas) => {
 		ty * getScale() > borders.bottom
 	) {
 		return false;
-	}	
+	}
 	// c.translate(tx, ty)
 	// j,i - indicies of the tile on the tilemap
 	c.drawImage(
@@ -289,7 +313,7 @@ const drawImageTile = (c, x, y, i, j, atlas) => {
 		ty - 130, // offset on the canvas
 		130, // width on the canvas
 		230  // height on the canvas
-	)	
+	)
 
 	return true;
 }
