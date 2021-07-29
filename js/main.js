@@ -41,8 +41,7 @@ let div;
 
 let isPinching = false;
 let startTouchDifference = 0;
-let zoomPointX;
-let zoomPointY;
+let startZoomPoint;
 
 const brands = [
 	{
@@ -142,14 +141,16 @@ const drawMap = () => {
 		}
 	}
 
-	// $('#log').innerHTML = drawCount
+	// $('#log').innerHTML = drawCount	
+};
 
+const drawPoint = point => {
 	bg.beginPath();
-	bg.arc(zoomPointX, zoomPointY, 10, 0, 2 * Math.PI);
+	bg.arc(point.x, point.y, 10, 0, 2 * Math.PI);
 	bg.fillStyle = 'red';
 	bg.fill();
 	bg.stroke();
-};
+}
 
 const drawImageTile = (c, x, y, i, j) => {
 	let tx = ((y - x) * tileWidth / 2) + offsetX;
@@ -199,14 +200,14 @@ const click = e => {
 		// Start pinch
 		isPinching = true;
 		startTouchDifference = getTouchDistance(touches);
-		getZoomPoint(touches);
+		startZoomPoint = getZoomPoint(touches);
+
+		// Set zoom point as last position to 
+		lastPositionX = startZoomPoint.x;
+		lastPositionY = startZoomPoint.y;
 		return;
 	}
-	isMouseDown = true;
-
-	currentOffsetX = offsetX;
-	currentOffsetY = offsetY;
-
+	isMouseDown = true;	
 }
 
 const unclick = e => {
@@ -216,6 +217,7 @@ const unclick = e => {
 		isPinching = false;
 
 		// Set whatever remains as last position
+		// TODO: doesn't seem to work?
 		lastPositionX = touches[0].pageX;
 		lastPositionY = touches[0].pageY;
 	}
@@ -230,8 +232,13 @@ const getZoomPoint = touches => {
 	const first = touches[0];
 	const second = touches[1];
 
-	zoomPointX = (first.pageX + second.pageX) / 2;
-	zoomPointY = (first.pageY + second.pageY) / 2;
+	const zoomPointX = (first.pageX + second.pageX) / 2;
+	const zoomPointY = (first.pageY + second.pageY) / 2;
+
+	return {
+		x: zoomPointX,
+		y: zoomPointY
+	}
 }
 
 const getTouchDistance = touches => {
@@ -255,6 +262,7 @@ const onMove = (e) => {
 
 			const newTouchDifference = getTouchDistance(touches);
 
+			const zoomPoint = getZoomPoint(touches);
 			// 200 -> 100
 			// 1 -> 0.5
 			// 0.5 = 1 * 100 / 200		
@@ -271,14 +279,22 @@ const onMove = (e) => {
 
 			// 830 with 1 is 830 - offset 0
 			// 830 with 1.2 is 691.6 
-			offsetX = offsetX + (zoomPointX / newScale - zoomPointX / scale);
-			offsetY = offsetY + (zoomPointY / newScale - zoomPointY / scale);
+			offsetX = offsetX + (zoomPoint.x / newScale - zoomPoint.x / scale);
+			offsetY = offsetY + (zoomPoint.y / newScale - zoomPoint.y / scale);
 
 			scale = newScale;
 
 			drawMap();
 
+			drawPoint(zoomPoint);
+
 			// TODO: We can treat the mid-point here as touch point
+
+			offsetX += (zoomPoint.x - lastPositionX) / getScale();
+			offsetY += (zoomPoint.y- lastPositionY) / getScale();
+
+			lastPositionX = zoomPoint.x;
+			lastPositionY = zoomPoint.y;
 
 			return;
 		}
