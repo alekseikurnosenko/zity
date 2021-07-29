@@ -120,11 +120,11 @@ const init = () => {
 	
 		for (let i = 0; i < brands.length; i++) {
 			let angle = 2 * Math.PI / brands.length * i;
-			let radius = rng.nextRange(plotSize + plotSize / 2, ntiles / 2 - 5);
+			let radius = rng.nextRange(plotSize + plotSize / 2, ntiles / 2 - 3);
+			console.log(radius)
 			let x = ntiles / 2 + Math.round(radius * Math.cos(angle));
 			let y = ntiles / 2 + Math.round(radius * Math.sin(angle));
 
-			console.log(`${x} ${y}`)
 			const bw = bg.measureText(brands[i].name).width + 32;
 			console.log(bw);
 			let tx = (((y - x) * tileWidth) + offsetX) * scale - bw;
