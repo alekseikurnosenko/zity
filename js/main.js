@@ -8,9 +8,13 @@ const generateMap = () => {
 	for (let i = 0; i < ntiles; i++) {
 		map[i] = [];
 		for (let j = 0; j < ntiles; j++) {
-			let tileX = Math.ceil(Math.random() * 6) - 1;
-			let tileY = Math.ceil(Math.random() * 11) - 1;
-			map[i][j] = [tileX, tileY];
+			while (true) {
+				let tileX = Math.ceil(Math.random() * 11) - 1;			
+				let tileY = Math.ceil(Math.random() * 6) - 1;
+				if (tileY === 2) continue
+				map[i][j] = [tileY, tileX];				
+				break;
+			}
 		}
 	}
 	console.log(JSON.stringify(map))
