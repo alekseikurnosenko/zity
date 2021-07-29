@@ -26,6 +26,7 @@ canvas {
 	z-index: 999;
 	display: block;
 	position: absolute;
+	white-space: nowrap;
 }
 
 .brand > a {
