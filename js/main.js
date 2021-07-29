@@ -4,8 +4,6 @@ const $c = _ => document.createElement(_)
 const texture = new Image()
 const texture2 = new Image()
 
-let ntiles = 50;
-
 const generateMap = (seed) => {
 	let rng = new RNG(seed);
 
@@ -69,12 +67,10 @@ const placeHouse = (x, y, treeCount, seed, map) => {
 
 let canvas, bg, fg, cf, tools, tool, activeTool, isPlacing
 
-let tileWidth = 128;
-let tileHeight = 64;
-
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 const userName = urlParams.get('user') || "Zitizen";
+const invitedBy = urlParams.get('invitedby');
 
 let scale = 0.5;
 let map = generateMap(hashCode(userName));
@@ -95,34 +91,9 @@ let div;
 let startTouchDifference = 0;
 let startZoomPoint;
 
-let brands = [
-	{
-		name: "Zign",
-		position: { x: -100, y: 900 },
-		link: "https://en.zalando.de/all/zign/",
-		banner: undefined,
-	},
-	{
-		name: "ARMEDANGELS",
-		position: { x: 300, y: 300 },
-		link: "https://en.zalando.de/explore/armedangels/",
-		banner: undefined,
-	}
-];
-
 let users = [];
 let ownId;
 let houses = [];
-
-var firebaseConfig = {
-	apiKey: "AIzaSyBYHT1GcB6DSeVL2d4HPmIVPXP7DAXgCOs",
-	authDomain: "zcity-70ee9.firebaseapp.com",
-	databaseURL: "https://zcity-70ee9-default-rtdb.firebaseio.com",
-	projectId: "zcity-70ee9",
-	storageBucket: "zcity-70ee9.appspot.com",
-	messagingSenderId: "463942414884",
-	appId: "1:463942414884:web:ff1438d113fbd5b859deb1"
-};
 
 firebase.initializeApp(firebaseConfig);
 
@@ -140,11 +111,10 @@ const init = () => {
 
 	// Pre-place empty house to wait for loading to happen
 	placeHouse(ntiles / 2, ntiles / 2, 0, 0, map);
-	
+
 
 	firebase.database().ref('users').on('value', snapshot => {
-		users = snapshot.val();
-
+		users = snapshot.val() || [];
 
 		users.forEach(user => {
 			if (user.name === userName) {
@@ -152,10 +122,7 @@ const init = () => {
 			};
 		})
 
-		if (ownId === undefined) {
-			if (userName === undefined) {
-				return;
-			}
+		if (ownId === undefined) {			
 			// Register ourselves
 			// Get next id
 			let maxId = -1;
@@ -172,9 +139,40 @@ const init = () => {
 				name: userName,
 				friends: []
 			});
+
+			// Return early, we should get an update on the next snapshot
 			return;			
 		}
 		const ownUser = users[ownId];
+
+		if (invitedBy) {
+			const userWhoInvitedUs = users.find(user => user.name === invitedBy);
+			if (userWhoInvitedUs === undefined) {
+				// Not supposed to happen
+				// Wrongly generated link, or user was deleted, ignore
+			} else {
+				// Person who invited us, doesn't have us as friends yet
+				// Add ourselves
+				if (!(userWhoInvitedUs.friends || []).some(friend => friend.id === ownUser.id)) {
+					firebase.database().ref('users/' + (userWhoInvitedUs.id)).set({	
+						...userWhoInvitedUs,					
+						friends: [...(userWhoInvitedUs.friends || []), { id: ownUser.id }]
+					});
+				}
+				// If we don't have them as a friend yet, update ourselves
+				if (!(ownUser.friends || []).some(friend => friend.id === userWhoInvitedUs.id)) {
+					firebase.database().ref('users/' + (ownUser.id)).set({
+						...ownUser,
+						friends: [...(ownUser.friends || []), { id: userWhoInvitedUs.id }]
+					});
+					if (ownUser.friends == undefined) {
+						ownUser.friends = [];
+					}
+					// Needed, otherwise we get some wonky updates
+					ownUser.friends.push({ id: userWhoInvitedUs.id });
+				}
+			}
+		}
 
 		houses = [
 			{
@@ -191,6 +189,8 @@ const init = () => {
 		// NB: for newly created users friends might be undefined
 		// Because firebase cannot save empty arrays ;_;
 		(ownUser.friends || []).forEach((friend, index) => {
+			if (index >= places.length) return;
+
 			houses.push({
 				position: {
 					x: ntiles / 2 + places[index][0],
@@ -201,7 +201,7 @@ const init = () => {
 			})
 		})
 
-		houses.forEach(house => {			
+		houses.forEach(house => {
 			placeHouse(house.position.x, house.position.y, house.trees, hashCode(house.name), map);
 		});
 
