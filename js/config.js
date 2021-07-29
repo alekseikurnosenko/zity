@@ -1,21 +1,7 @@
-let ntiles = 50;
+let ntiles = 70;
 let tileWidth = 128;
 let tileHeight = 64;
-
-let brands = [
-	{
-		name: "Zign",
-		position: { x: -100, y: 900 },
-		link: "https://en.zalando.de/all/zign/",
-		banner: undefined,
-	},
-	{
-		name: "ARMEDANGELS",
-		position: { x: 300, y: 300 },
-		link: "https://en.zalando.de/explore/armedangels/",
-		banner: undefined,
-	}
-];
+let plotSize = 9;
 
 var firebaseConfig = {
 	apiKey: "AIzaSyBYHT1GcB6DSeVL2d4HPmIVPXP7DAXgCOs",

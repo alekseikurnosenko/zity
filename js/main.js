@@ -23,8 +23,7 @@ const generateMap = (seed) => {
 	return map;
 }
 
-const placeHouse = (x, y, treeCount, seed, map) => {
-	let plotSize = 9;
+const placeHouse = (x, y, treeCount, seed, map) => {	
 	// Base green
 	for (let i = -Math.floor(plotSize / 2); i < Math.ceil(plotSize / 2); i++) {
 		for (let j = -Math.floor(plotSize / 2); j < Math.ceil(plotSize / 2); j++) {
@@ -32,18 +31,18 @@ const placeHouse = (x, y, treeCount, seed, map) => {
 		}
 	}
 
-	plotSize = 7;
+	greenSize = plotSize - 2;
 	// Base green
-	for (let i = -Math.floor(plotSize / 2); i < Math.ceil(plotSize / 2); i++) {
-		for (let j = -Math.floor(plotSize / 2); j < Math.ceil(plotSize / 2); j++) {
+	for (let i = -Math.floor(greenSize / 2); i < Math.ceil(greenSize / 2); i++) {
+		for (let j = -Math.floor(greenSize / 2); j < Math.ceil(greenSize / 2); j++) {
 			map[x + i][y + j] = [0, 1, texture2];
 		}
 	}
 
 	// Place trees
 	let treePositions = [];
-	for (let i = -Math.floor(plotSize / 2); i < Math.ceil(plotSize / 2); i++) {
-		for (let j = -Math.floor(plotSize / 2); j < Math.ceil(plotSize / 2); j++) {
+	for (let i = -Math.floor(greenSize / 2); i < Math.ceil(greenSize / 2); i++) {
+		for (let j = -Math.floor(greenSize / 2); j < Math.ceil(greenSize / 2); j++) {
 			if (i === 0 && j === 0) continue;
 
 			treePositions.push([i, j]);
@@ -94,6 +93,7 @@ let startZoomPoint;
 let users = [];
 let ownId;
 let houses = [];
+let brands = [];
 
 firebase.initializeApp(firebaseConfig);
 
@@ -112,6 +112,42 @@ const init = () => {
 	// Pre-place empty house to wait for loading to happen
 	placeHouse(ntiles / 2, ntiles / 2, 0, 0, map);
 
+	firebase.database().ref('brands').get().then(snapshot => {
+		brands = snapshot.val();
+		// brands = [...brands, ...brands, ...brands, ...brands, ...brands]	
+		
+		let rng = new RNG(hashCode(userName));
+		
+		const restrictedRangeStart = ntiles / 2 - plotSize - plotSize / 2;
+		const restrictedRangeEnd = ntiles / 2 + plotSize + plotSize / 2;
+
+		for (let i = 0; i < brands.length; i++) {
+			let x, y;
+
+			do {
+				x = rng.nextRange(0, ntiles);
+				y = rng.nextRange(0, ntiles);
+			} while(
+				x > restrictedRangeStart && x < restrictedRangeEnd ||
+				y > restrictedRangeStart && y < restrictedRangeEnd 
+			)
+			console.log(`R: ${restrictedRangeStart} ${restrictedRangeEnd}`)
+			console.log(`${x} ${y}`)
+			let tx = ((y - x) * tileWidth / 2);
+			let ty = ((x + y) * tileHeight / 2);
+			
+			map[x][y] = [3, 10, texture];
+
+			let banner = buildBrandBanner(brands[i]);
+			brands[i].banner = banner;
+			brands[i].position = {
+				x: tx,				
+				y: ty
+			}
+			$('#banner_container').appendChild(banner)
+		}
+		drawMap();	
+	});
 
 	firebase.database().ref('users').on('value', snapshot => {
 		users = snapshot.val() || [];
@@ -134,7 +170,7 @@ const init = () => {
 			firebase.database().ref('users/' + (maxId + 1)).set({
 				id: maxId + 1,
 				house_plot: {
-					trees: 0
+					trees: Math.round(Math.random() * 40)
 				},
 				name: userName,
 				friends: []
@@ -229,13 +265,7 @@ const init = () => {
 
 	offsetX = w;
 	offsetY = - (ntiles - 15) * tileHeight / 2;
-
-	for (let i = 0; i < brands.length; i++) {
-		let banner = buildBrandBanner(brands[i]);
-		brands[i].banner = banner;
-		$('#banner_container').appendChild(banner)
-	}
-
+	
 	drawMap()
 
 	fg = $('#fg')
