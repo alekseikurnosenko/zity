@@ -51,11 +51,13 @@ const placeHouse = (x, y, treeCount, map) => {
 	}
 
 	// Randomise available tree position
-	// Ideally should be pseudo-random
-	treePositions = treePositions.sort(() => Math.random() > 0.5 ? 1 : -1);
+	
+	var rng = new RNG(20);
+
+	treePositions = treePositions.sort(() => rng.nextFloat() > 0.5 ? 1 : -1);
 	for (let t = 0; t < treeCount; t++) {
 
-		const trees = [2, 3, 4].sort(() => Math.random() > 0.5 ? 1 : -1);
+		const trees = [2, 3, 4].sort(() => rng.nextFloat() > 0.5 ? 1 : -1);
 		const [i, j] = treePositions[t];
 		map[x + i][y + j] = [0, trees[0], texture2];
 	}
@@ -150,6 +152,9 @@ const init = () => {
 		})
 
 		if (ownId === undefined) {
+			if (userName === undefined) {
+				return;
+			}
 			// Register ourselves
 			// Get next id
 			let maxId = -1;
