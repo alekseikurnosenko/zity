@@ -117,24 +117,18 @@ const init = () => {
 		// brands = [...brands, ...brands, ...brands, ...brands, ...brands]	
 		
 		let rng = new RNG(hashCode(userName));
-		
-		const restrictedRangeStart = ntiles / 2 - plotSize - plotSize / 2;
-		const restrictedRangeEnd = ntiles / 2 + plotSize + plotSize / 2;
-
+	
 		for (let i = 0; i < brands.length; i++) {
-			let x, y;
+			let angle = 2 * Math.PI / brands.length * i;
+			let radius = rng.nextRange(plotSize + plotSize / 2, ntiles / 2 - 5);
+			let x = ntiles / 2 + Math.round(radius * Math.cos(angle));
+			let y = ntiles / 2 + Math.round(radius * Math.sin(angle));
 
-			do {
-				x = rng.nextRange(0, ntiles);
-				y = rng.nextRange(0, ntiles);
-			} while(
-				x > restrictedRangeStart && x < restrictedRangeEnd ||
-				y > restrictedRangeStart && y < restrictedRangeEnd 
-			)
-			console.log(`R: ${restrictedRangeStart} ${restrictedRangeEnd}`)
 			console.log(`${x} ${y}`)
-			let tx = ((y - x) * tileWidth / 2);
-			let ty = ((x + y) * tileHeight / 2);
+			const bw = bg.measureText(brands[i].name).width + 32;
+			console.log(bw);
+			let tx = (((y - x) * tileWidth) + offsetX) * scale - bw;
+			let ty = (((x + y) * tileHeight)) * scale - 180;
 			
 			map[x][y] = [3, 10, texture];
 

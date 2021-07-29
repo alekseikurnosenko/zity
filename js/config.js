@@ -1,4 +1,4 @@
-let ntiles = 70;
+let ntiles = 50;
 let tileWidth = 128;
 let tileHeight = 64;
 let plotSize = 9;
