@@ -67,4 +67,5 @@ canvas {
 	left: 0;
 	text-decoration: none;
 	user-select: none;
+	visibility: hidden;
 }

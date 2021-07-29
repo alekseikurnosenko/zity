@@ -303,7 +303,7 @@ const onMove = (e) => {
 
 			drawMap();
 
-			drawPoint(zoomPoint);
+			// drawPoint(zoomPoint);
 
 			offsetX += (zoomPoint.x - lastPositionX) / getScale();
 			offsetY += (zoomPoint.y - lastPositionY) / getScale();
