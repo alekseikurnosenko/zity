@@ -1,6 +1,7 @@
 
 const $ = _ => document.querySelector(_)
 const $c = _ => document.createElement(_)
+let ntiles = 50;
 
 const generateMap = () => {
 	const map = [];
@@ -20,7 +21,7 @@ let canvas, bg, fg, cf, tools, tool, activeTool, isPlacing
 
 let tileWidth = 128;
 let tileHeight = 64;
-let ntiles = 30;
+
 let scale = 0.5;
 let map = generateMap();
 
@@ -33,7 +34,15 @@ let offsetY = 0;
 let currentOffsetX = 0;
 let currentOffsetY = 0;
 
+let lastPositionX = 0;
+let lastPositionY = 0;
+
 let div;
+
+let isPinching = false;
+let startTouchDifference = 0;
+let zoomPointX;
+let zoomPointY;
 
 const brands = [
 	{
@@ -54,17 +63,16 @@ texture.src = "textures/01_130x66_130x230.png"
 texture.onload = _ => init()
 
 const init = () => {
-	tool = [0, 0]
 	canvas = $("#bg")
 
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
 
 	borders = {
-		left: -canvas.width / 2 - tileWidth,
-		right: canvas.width / 2 + tileWidth,
-		top: 0 - tileHeight * 3,
-		bottom: canvas.height + tileHeight * 3
+		left: 0 - tileWidth,
+		right: canvas.width + tileWidth,
+		top: 0 - tileHeight,
+		bottom: canvas.height + tileHeight * 1
 	}
 
 	w = canvas.width;
@@ -73,17 +81,18 @@ const init = () => {
 	texHeight = 6
 	bg = canvas.getContext("2d")
 
-	bg.translate(w / 2, tileHeight * 1)
-
-	loadHashState(document.location.hash.substring(1))
+	offsetX = w;
+	offsetY = -h;
 
 	drawMap()
 
 	fg = $('#fg')
 	fg.width = canvas.width
 	fg.height = canvas.height
+
 	cf = fg.getContext('2d')
 	cf.translate(w / 2, tileHeight * 2)
+
 	fg.addEventListener('contextmenu', e => e.preventDefault())
 
 	fg.addEventListener('mouseup', unclick)
@@ -98,111 +107,22 @@ const init = () => {
 		let banner = buildBrandBanner(brands[i]);
 		$('#banner_container').appendChild(banner)
 	}
-	
-	
-
-	// fg.addEventListener('pointerup', click)
-	// tools = $('#tools')
-	// let toolCount = 0
-	// for (let i = 0; i < texHeight; i++) {
-	// 	for (let j = 0; j < texWidth; j++) {
-	// 		const div = $c('div');
-	// 		div.id = `tool_${toolCount++}`
-	// 		div.style.display = "block"
-	// 		/* width of 132 instead of 130  = 130 image + 2 border = 132 */
-	// 		div.style.backgroundPosition = `-${j * 130 + 2}px -${i * 230}px`
-	// 		div.addEventListener('click', e => {
-	// 			tool = [i, j]
-	// 			if (activeTool)
-	// 				$(`#${activeTool}`).classList.remove('selected')
-	// 			activeTool = e.target.id
-	// 			$(`#${activeTool}`).classList.add('selected')
-	// 		})
-	// 		tools.appendChild(div)
-	// 	}
-	// }
-
-}
-
-// From https://stackoverflow.com/a/36046727
-const ToBase64 = u8 => {
-	return btoa(String.fromCharCode.apply(null, u8))
-}
-
-const FromBase64 = str => {
-	return atob(str).split('').map(c => c.charCodeAt(0))
-}
-
-const updateHashState = () => {
-	let c = 0
-	const u8 = new Uint8Array(ntiles * ntiles)
-	for (let i = 0; i < ntiles; i++) {
-		for (let j = 0; j < ntiles; j++) {
-			u8[c++] = map[i][j][0] * texWidth + map[i][j][1]
-		}
-	}
-	const state = ToBase64(u8)
-	history.replaceState(undefined, undefined, `#${state}`)
-}
-
-const loadHashState = state => {
-	// const u8 = FromBase64(state)
-	// let c = 0
-	// for (let i = 0; i < ntiles; i++) {
-	// 	for (let j = 0; j < ntiles; j++) {
-	// 		const t = u8[c++] || 0
-	// 		const x = Math.trunc(t / texWidth)
-	// 		const y = Math.trunc(t % texWidth)
-	// 		map[i][j] = [x, y]
-	// 	}
-	// }
 }
 
 const buildBrandBanner = brand => {
-	let div = $c('div');	
+	let div = $c('div');
 	div.classList.add('brand')
 	div.style.top = `${brand.position.y}px`
 	div.style.left = `${brand.position.x}px`
-	
+
 	let a = $c('a');
 	a.href = brand.link;
 	a.innerHTML = brand.name;
-	
+
 	div.appendChild(a);
 
 	return div;
 };
-
-const click = e => {
-	isMouseDown = true;
-
-	var touches = e.changedTouches;
-	if (touches) {
-		console.log(touches);
-		currentOffsetX = touches[0].pageX - offsetX;
-		currentOffsetY = touches[0].pageY - offsetY;
-	} else {
-		currentOffsetX = e.offsetX - offsetX;
-		currentOffsetY = e.offsetY - offsetY;
-	}
-	// const pos = getPosition(e)
-	// if (pos.x >= 0 && pos.x < ntiles && pos.y >= 0 && pos.y < ntiles) {
-
-	// 	map[pos.x][pos.y][0] = (e.which === 3) ? 0 : tool[0]
-	// 	map[pos.x][pos.y][1] = (e.which === 3) ? 0 : tool[1]
-	// 	isPlacing = true
-
-	// 	drawMap()
-	// 	cf.clearRect(-w, -h, w * 2, h * 2)
-	// }
-	// updateHashState();
-}
-
-const unclick = () => {
-	isMouseDown = false;
-	// if (isPlacing)
-	// 	isPlacing = false
-}
 
 const drawMap = () => {
 	bg.save();
@@ -210,91 +130,190 @@ const drawMap = () => {
 	bg.clearRect(0, 0, canvas.width, canvas.height)
 	bg.restore();
 
+	let drawCount = 0;
 	for (let i = 0; i < ntiles; i++) {
 		for (let j = 0; j < ntiles; j++) {
 			let tileX = map[i][j][0];
 			let tileY = map[i][j][1];
-			drawImageTile(bg, i, j, tileX, tileY)
+
+			if (drawImageTile(bg, i, j, tileX, tileY)) {
+				drawCount++;
+			}
 		}
 	}
-}
 
-const drawTile = (c, x, y, color) => {
-	c.save()
-	c.translate((y - x) * tileWidth / 2, (x + y) * tileHeight / 2)
-	c.beginPath()
-	c.moveTo(0, 0)
-	c.lineTo(tileWidth / 2, tileHeight / 2)
-	c.lineTo(0, tileHeight)
-	c.lineTo(-tileWidth / 2, tileHeight / 2)
-	c.closePath()
-	c.fillStyle = color
-	c.fill()
-	c.restore()
-}
+	// $('#log').innerHTML = drawCount
+
+	bg.beginPath();
+	bg.arc(zoomPointX, zoomPointY, 10, 0, 2 * Math.PI);
+	bg.fillStyle = 'red';
+	bg.fill();
+	bg.stroke();
+};
 
 const drawImageTile = (c, x, y, i, j) => {
-	let tx = ((y - x) * tileWidth / 2) * scale + offsetX;
-	let ty = ((x + y) * tileHeight / 2) * scale + offsetY;
+	let tx = ((y - x) * tileWidth / 2) + offsetX;
+	let ty = ((x + y) * tileHeight / 2) + offsetY;
 
-	if (tx < borders.left ||
-		tx > borders.right ||
-		ty < borders.top ||
-		ty > borders.bottom
+	if (tx * getScale() < borders.left ||
+		tx * getScale() > borders.right ||
+		ty * getScale() < borders.top ||
+		ty * getScale() > borders.bottom
 	) {
-		return;
+		return false;
 	}
 	c.save()
-	c.translate(tx, ty)
-	j *= 130
-	i *= 230
-	c.drawImage(texture, j, i, 130, 230, -65, -130, 130 * scale, 230 * scale)
+	c.scale(getScale(), getScale())
+
+	// c.translate(tx, ty)
+	// j,i - indicies of the tile on the tilemap
+	c.drawImage(
+		texture, // atlass
+		j * 130, // position on the tilemap
+		i * 230, // position on the tilemap
+		130,  // source width
+		230,  // source height
+		tx - 65, // offset on the canvas
+		ty - 130, // offset on the canvas
+		130, // width on the canvas
+		230  // height on the canvas
+	)
 	c.restore()
+
+	return true;
 }
 
-const getPosition = e => {
-	const _y = (e.offsetY - tileHeight * 2) / tileHeight,
-		_x = e.offsetX / tileWidth - ntiles / 2
-	x = Math.floor(_y - _x)
-	y = Math.floor(_x + _y)
-	return { x, y }
+const click = e => {
+	var touches = e.touches;
+
+	if (touches) {
+		lastPositionX = touches[0].pageX;
+		lastPositionY = touches[0].pageY;
+	} else {
+		lastPositionX = e.offsetX;
+		lastPositionY = e.offsetY;
+	}
+
+	if (touches && touches.length > 1) {
+		// Second touch
+		// Start pinch
+		isPinching = true;
+		startTouchDifference = getTouchDistance(touches);
+		getZoomPoint(touches);
+		return;
+	}
+	isMouseDown = true;
+
+	currentOffsetX = offsetX;
+	currentOffsetY = offsetY;
+
+}
+
+const unclick = e => {
+	var touches = e.touches;
+	if (touches && isPinching && touches.length <= 1) {
+		// Stop pinch
+		isPinching = false;
+
+		// Set whatever remains as last position
+		lastPositionX = touches[0].pageX;
+		lastPositionY = touches[0].pageY;
+	}
+	isMouseDown = false;
+}
+
+const getScale = () => {
+	return scale;
+};
+
+const getZoomPoint = touches => {
+	const first = touches[0];
+	const second = touches[1];
+
+	zoomPointX = (first.pageX + second.pageX) / 2;
+	zoomPointY = (first.pageY + second.pageY) / 2;
+}
+
+const getTouchDistance = touches => {
+	const first = touches[0];
+	const second = touches[1];
+
+	const diffX = (second.pageX - first.pageX);
+	const diffY = (second.pageY - first.pageY);
+
+	const distance = Math.sqrt(diffX * diffX + diffY * diffY);
+
+	return distance;
 }
 
 const onMove = (e) => {
 	e.preventDefault();
 
 	if (isMouseDown) {
-		let touches = e.changedTouches;
-		if (touches) {
-			offsetX = touches[0].pageX - currentOffsetX;
-			offsetY = touches[0].pageY - currentOffsetY;
-		} else {
-			offsetX = e.offsetX - currentOffsetX;
-			offsetY = e.offsetY - currentOffsetY;
+		const touches = e.touches;
+		if (touches && touches.length > 1) {
+
+			const newTouchDifference = getTouchDistance(touches);
+
+			// 200 -> 100
+			// 1 -> 0.5
+			// 0.5 = 1 * 100 / 200		
+
+			const newScale = scale * newTouchDifference / startTouchDifference;
+			if (newScale < 0.2) {
+				newScale = 0.2;
+			}
+			if (newScale > 2.0) {
+				newScale = 2.0;
+			}
+
+			startTouchDifference = newTouchDifference;
+
+			// 830 with 1 is 830 - offset 0
+			// 830 with 1.2 is 691.6 
+			offsetX = offsetX + (zoomPointX / newScale - zoomPointX / scale);
+			offsetY = offsetY + (zoomPointY / newScale - zoomPointY / scale);
+
+			scale = newScale;
+
+			drawMap();
+
+			// TODO: We can treat the mid-point here as touch point
+
+			return;
 		}
+
+		if (touches) {
+			offsetX += (touches[0].pageX - lastPositionX) / getScale();
+			offsetY += (touches[0].pageY - lastPositionY) / getScale();
+
+			lastPositionX = touches[0].pageX;
+			lastPositionY = touches[0].pageY;
+
+		} else {
+			offsetX += (e.offsetX - lastPositionX) / getScale();
+			offsetY += (e.offsetY - lastPositionY) / getScale();
+
+			lastPositionX = e.offsetX;
+			lastPositionY = e.offsetY;
+		}
+
 
 		// Enforce scroll bounds		
-		if (scale * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2 < offsetX) {
-			offsetX = scale * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2;
-		}
-		if (scale * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2 < -offsetX) {
-			offsetX = -1 * scale * (ntiles * tileWidth / 2 + tileWidth) + canvas.width / 2;
-		}
+		// if (getScale() * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2 < offsetX) {
+		// 	offsetX = getScale() * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2;
+		// }
+		// if (getScale() * (ntiles * tileWidth / 2 + tileWidth) - canvas.width / 2 < -offsetX) {
+		// 	offsetX = -1 * getScale() * (ntiles * tileWidth / 2 + tileWidth) + canvas.width / 2;
+		// }
 
-		if (offsetY > tileHeight) offsetY = tileHeight;
-		if (scale * (ntiles * tileHeight + tileHeight * 2) - canvas.height < -offsetY) {
-			offsetY = -1 * scale * (ntiles * tileHeight + tileHeight * 2) + canvas.height;
-		}
+		// if (offsetY > tileHeight) offsetY = tileHeight;
+		// if (getScale() * (ntiles * tileHeight + tileHeight * 2) - canvas.height < -offsetY) {
+		// 	offsetY = -1 * getScale() * (ntiles * tileHeight + tileHeight * 2) + canvas.height;
+		// }
 		drawMap()
 
 		$('#banner_container').style.top = `${offsetY}px`
 		$('#banner_container').style.left = `${offsetX}px`
 	}
-
-	// if (isPlacing)
-	// 	click(e)
-	// const pos = getPosition(e)
-	// cf.clearRect(-w, -h, w * 2, h * 2)
-	// if (pos.x >= 0 && pos.x < ntiles && pos.y >= 0 && pos.y < ntiles)
-	// 	drawTile(cf, pos.x, pos.y, 'rgba(0,0,0,0.2)')
 }

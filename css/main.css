@@ -91,6 +91,15 @@ canvas {
 	position: absolute;
 }
 
+#log {
+	z-index: 9999;
+	background-color: #b05355;
+	color: white;
+	height: 32px;
+	text-decoration: none;
+	user-select: none;
+}
+
 @media only screen and (max-width: 966px) {
 
 	#main {
